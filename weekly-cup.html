@@ -118,6 +118,8 @@
     // long — generate from the short 58-cell scaffold. TOTD keeps the full
     // length (it passes no options).
     const plan = window.__cupTrackGen(seedText, { compact: true });
+    // Weekly Cup maps must not include generated jump ramps/obstacles.
+    plan.modsObj.j = [];
     const map = await window.__encodeCellsV3(plan.cells);
     const modsEncoded = encodeMods(plan.modsObj);
     const playUrl = `${BASE_URL}?map=${encodeURIComponent(map)}&mods=${encodeURIComponent(modsEncoded)}`;
