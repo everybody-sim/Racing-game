@@ -588,7 +588,7 @@ const TRACK_SHARE_API_PREFIXES = [ '/api', '' ];
 const PLAYER_NAME_KEY = 'racing-player-name-v1';
 const MAX_PLAYER_NAME_LENGTH = 24;
 const ACCOUNT_SESSION_KEY = 'racing-account-session-v1';
-const MAX_LEADERBOARD_ROWS = 15;
+const MAX_LEADERBOARD_ROWS = 50;
 const MAX_LEADERBOARD_GHOST_SAMPLES = 2500;
 const CAMPAIGN_STAGES = [
 	{ type: 'lap-default', goal: 1, text: 'Complete 1 lap on default track' },
