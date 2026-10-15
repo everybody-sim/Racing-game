@@ -10095,6 +10095,12 @@ function completeCampaignStage() {
 	// (user order 2026-10-06: checkpoint firing from a tunnel underneath)
 	const GATE_LEVEL_STEP = CELL_RAW * GRID_SCALE * 0.5;
 	const GATE_LEVEL_HALF_SPAN = GATE_LEVEL_STEP * 0.5;
+	// (user order 2026-10-15: restore the airborne gate trigger) A car that
+	// flies, boosts or arc-jumps over a checkpoint/finish still fires it, as
+	// long as it is at most this many world units ABOVE the gate's own level.
+	// A car BELOW the gate's level (tunnel under a surface gate, ground road
+	// under an elevated gate) can never fire it.
+	const GATE_AIR_TRIGGER_MAX_Y = 12;
 	// Tunnel pit blocks: checkpoints/gates placed IN tunnels never appear in
 	// `cells`, so they were invisible to lap/checkpoint logic — the trigger
 	// plane test itself is 2D (no y gate), it just never got a state (user
@@ -14989,7 +14995,8 @@ function completeCampaignStage() {
 					const t = z0 / ( z0 - z1 );
 					const xCross = THREE.MathUtils.lerp( checkpoint.lastLocalX, localX, t );
 					crossedCheckpoint = t >= 0 && t <= 1 && Math.abs( xCross ) <= checkpoint.halfExtent
-						&& Math.abs( vehicle.spherePos.y - checkpoint.levelY ) <= GATE_LEVEL_HALF_SPAN
+						&& vehicle.spherePos.y - checkpoint.levelY <= GATE_AIR_TRIGGER_MAX_Y
+						&& vehicle.spherePos.y - checkpoint.levelY >= - GATE_LEVEL_HALF_SPAN
 						&& ( ! checkpoint.closedTunnelGate || vehicle.spherePos.y <= CLOSED_TUNNEL_GATE_MAX_Y );
 
 				}
@@ -15039,7 +15046,8 @@ function completeCampaignStage() {
 						const t = z0 / ( z0 - z1 );
 						const xCross = THREE.MathUtils.lerp( checkpoint.lastLocalX, localX, t );
 					crossedCheckpoint = t >= 0 && t <= 1 && Math.abs( xCross ) <= checkpoint.halfExtent
-						&& Math.abs( vehicle2.spherePos.y - checkpoint.levelY ) <= GATE_LEVEL_HALF_SPAN
+						&& vehicle2.spherePos.y - checkpoint.levelY <= GATE_AIR_TRIGGER_MAX_Y
+						&& vehicle2.spherePos.y - checkpoint.levelY >= - GATE_LEVEL_HALF_SPAN
 						&& ( ! checkpoint.closedTunnelGate || vehicle2.spherePos.y <= CLOSED_TUNNEL_GATE_MAX_Y );
 
 					}
@@ -15092,7 +15100,8 @@ function completeCampaignStage() {
 					const t = z0 / ( z0 - z1 );
 					const xCross = THREE.MathUtils.lerp( lastLocalX, localX, t );
 					crossedFinish = t >= 0 && t <= 1 && Math.abs( xCross ) <= finishData.halfExtent
-						&& Math.abs( vehicle.spherePos.y - finishData.levelY ) <= GATE_LEVEL_HALF_SPAN
+						&& vehicle.spherePos.y - finishData.levelY <= GATE_AIR_TRIGGER_MAX_Y
+						&& vehicle.spherePos.y - finishData.levelY >= - GATE_LEVEL_HALF_SPAN
 						&& ( ! finishData.closedTunnelGate || vehicle.spherePos.y <= CLOSED_TUNNEL_GATE_MAX_Y );
 					if ( crossedFinish ) crossedAtT = t;
 
@@ -15320,7 +15329,8 @@ function completeCampaignStage() {
 					const t = z0 / ( z0 - z1 );
 					const xCross = THREE.MathUtils.lerp( lastLocalX2, localX, t );
 					crossedFinish = t >= 0 && t <= 1 && Math.abs( xCross ) <= finishData.halfExtent
-						&& Math.abs( vehicle2.spherePos.y - finishData.levelY ) <= GATE_LEVEL_HALF_SPAN
+						&& vehicle2.spherePos.y - finishData.levelY <= GATE_AIR_TRIGGER_MAX_Y
+						&& vehicle2.spherePos.y - finishData.levelY >= - GATE_LEVEL_HALF_SPAN
 						&& ( ! finishData.closedTunnelGate || vehicle2.spherePos.y <= CLOSED_TUNNEL_GATE_MAX_Y );
 
 				}
