@@ -179,7 +179,7 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 		#loading-error { margin-top: 12px; color: #ffc4c4; display: none; }
 		#loading-reload-btn { margin-top: 10px; display: none; border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; background: rgba(255,255,255,0.12); color: #fff; padding: 7px 11px; cursor: pointer; font: 700 13px/1 sans-serif; }
 		@keyframes loading-spin { to { transform: rotate(360deg); } }
-		#editor-link, #totd-link, #weekly-cup-link, #coin-leaderboard-link, #competitions-link, #replay-link, #tracks-link, #clubs-link, #mods-link, #hacks-toggle, #split-link, #respawnBtn, #mode-menu-btn, #home-menu-btn, #car-select, #share-time-btn, #export-ghost-btn, #import-ghost-btn, #video-recorder-btn {
+		#editor-link, #totd-link, #weekly-cup-link, #coin-leaderboard-link, #competitions-link, #replay-link, #tracks-link, #clubs-link, #mods-link, #hacks-toggle, #split-link, #respawnBtn, #mode-menu-btn, #home-menu-btn, #car-select, #share-time-btn, #export-ghost-btn, #import-ghost-btn, #publish-track-btn, #video-recorder-btn {
 			position: absolute;
 			bottom: 12px;
 			color: #fff;
@@ -214,15 +214,14 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 		#export-ghost-btn { left: 16px; bottom: 12px; }
 		#import-ghost-btn { left: 136px; bottom: 12px; }
 		#share-time-btn, #export-ghost-btn, #import-ghost-btn { cursor: pointer; }
-		#publish-track-btn { position: absolute; left: 16px; bottom: 54px; z-index: 12; border-radius: 12px; border: 1px solid rgba(140,210,255,0.58); background: linear-gradient(145deg, rgba(44,117,210,0.92), rgba(18,44,82,0.9)); box-shadow: 0 8px 24px rgba(0,0,0,0.34); font: 800 13px/1 sans-serif; letter-spacing: 0.02em; cursor: pointer; }
-		#publish-track-btn:hover { background: linear-gradient(145deg, rgba(58,138,230,0.95), rgba(24,56,100,0.92)); border-color: rgba(170,225,255,0.75); }
+		#publish-track-btn { left: 16px; bottom: 54px; z-index: 12; padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(140,210,255,0.58); background: linear-gradient(145deg, rgba(44,117,210,0.92), rgba(18,44,82,0.9)); box-shadow: 0 8px 24px rgba(0,0,0,0.34); font: 800 14px/1 sans-serif; letter-spacing: 0.02em; cursor: pointer; }
 		#verify-track-overlay { position: fixed; inset: 0; background: rgba(6,9,15,0.62); display: flex; align-items: center; justify-content: center; z-index: 300; }
 		#verify-track-card { position: relative; background: linear-gradient(180deg, rgba(30,40,60,0.98), rgba(16,22,36,0.98)); border: 1px solid rgba(140,210,255,0.45); border-radius: 16px; padding: 26px 24px 22px; max-width: 340px; width: calc(100vw - 80px); text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,0.5); }
 		#verify-track-card h3 { margin: 0 0 10px; font-size: 17px; color: #fff; }
 		#verify-track-card p { margin: 0; font: 12.5px/1.55 sans-serif; color: rgba(255,255,255,0.75); }
 		#verify-track-close { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; font: 700 13px/1 sans-serif; }
 		#verify-track-close:hover { background: rgba(255,255,255,0.22); }
-		#editor-link:hover, #totd-link:hover, #weekly-cup-link:hover, #coin-leaderboard-link:hover, #competitions-link:hover, #replay-link:hover, #tracks-link:hover, #clubs-link:hover, #mods-link:hover, #hacks-toggle:hover, #split-link:hover, #respawnBtn:hover, #mode-menu-btn:hover, #home-menu-btn:hover, #car-select:hover, #share-time-btn:hover, #export-ghost-btn:hover, #import-ghost-btn:hover, #video-recorder-btn:hover { background: rgba(0,0,0,0.7); }
+		#editor-link:hover, #totd-link:hover, #weekly-cup-link:hover, #coin-leaderboard-link:hover, #competitions-link:hover, #replay-link:hover, #tracks-link:hover, #clubs-link:hover, #mods-link:hover, #hacks-toggle:hover, #split-link:hover, #respawnBtn:hover, #mode-menu-btn:hover, #home-menu-btn:hover, #car-select:hover, #share-time-btn:hover, #export-ghost-btn:hover, #import-ghost-btn:hover, #publish-track-btn:hover, #video-recorder-btn:hover { background: rgba(0,0,0,0.7); }
 		#mode-menu-btn:hover { background: linear-gradient(145deg, rgba(65,144,240,0.98), rgba(24,58,104,0.95)); }
 		#home-menu-btn:hover { background: rgba(20,35,55,0.92); }
 		/* Hide scattered nav buttons until JS moves them into the quick-menu panel (prevents FOUC) */
