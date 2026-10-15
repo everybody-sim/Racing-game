@@ -1693,7 +1693,50 @@
 				.catch( () => setStatus( 'Failed to add entry.', true ) )
 				.finally( () => { publishInFlight = false; } );
 		} );
-			document.addEventListener('click', async (e) => {
+			// ── Editor publish handoff (fromEditorPublish=1) ─────────────────
+	// Opened from the in-game Publish Track button: pre-open the publish
+	// drawer and pull the ghost code from the game tab via postMessage (the
+	// ghost never rides the URL or localStorage — it is far too large).
+	(function initEditorPublishHandoff() {
+		const params = new URLSearchParams( window.location.search );
+		if ( params.get( 'fromEditorPublish' ) !== '1' ) return;
+		const drawer = document.getElementById( 'publish-drawer' );
+		if ( drawer ) {
+			drawer.open = true;
+			drawer.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+		}
+		const ghostBox = document.getElementById( 'ghost-code' );
+		const statusEl = document.getElementById( 'status' );
+		// The board's own connect flow also writes #status, so re-assert our
+		// message briefly until the board is fully loaded.
+		const say = ( msg ) => {
+			if ( ! statusEl ) return;
+			statusEl.textContent = msg;
+			setTimeout( () => { if ( statusEl.textContent !== 'Connected to cloud board.' ) return; statusEl.textContent = msg; }, 1200 );
+			setTimeout( () => { if ( statusEl.textContent !== 'Connected to cloud board.' ) return; statusEl.textContent = msg; }, 2600 );
+		};
+		if ( ! window.opener || window.opener === window ) {
+			say( 'Tip: use Export ghost in the game and paste the code below, then publish.' );
+			return;
+		}
+		const onGhost = ( event ) => {
+			if ( event.origin !== window.location.origin ) return;
+			const data = event.data;
+			if ( ! data || data.type !== 'skid-editor-ghost' ) return;
+			window.removeEventListener( 'message', onGhost );
+			if ( ghostBox && data.ghostCode ) {
+				ghostBox.value = data.ghostCode;
+				say( 'Ghost loaded from your editor run — name your track and publish!' );
+			}
+		};
+		window.addEventListener( 'message', onGhost );
+		window.opener.postMessage( { type: 'skid-editor-ghost-request' }, window.location.origin );
+		setTimeout( () => {
+			if ( ghostBox && ! ghostBox.value ) say( 'Could not auto-load the ghost — use Export ghost in the game and paste it below.' );
+		}, 3000 );
+	})();
+
+	document.addEventListener('click', async (e) => {
   const openLink = e.target.closest( 'a[data-action="open-track"]' );
   if ( openLink ) {
     if ( useRemoteBoard ) {

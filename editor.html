@@ -5873,7 +5873,11 @@ function refreshMovingSpeedUi() {
 
 			const result = await createPlayableTrackUrl();
 			localStorage.setItem( 'racing-campaign-editor-played', '1' );
-			window.open( result.url, '_blank' );
+			// from-editor=1 surfaces the in-game Publish Track button so the
+			// creator can push the verified run straight to the share board.
+			const editorPlayUrl = new URL( result.url, window.location.href );
+			editorPlayUrl.searchParams.set( 'from-editor', '1' );
+			window.open( editorPlayUrl.toString(), '_blank' );
 			if ( result.mode === 'local-pack' ) showToast( 'Opened with local pack fallback (same browser/device only).' );
 
 			} catch ( error ) {

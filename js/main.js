@@ -13806,6 +13806,86 @@ function completeCampaignStage() {
 		importGhostIntoNewTab();
 
 	} );
+
+	// ── Publish Track (from-editor=1) ──────────────────────────────────
+	// The editor's Play button appends from-editor=1; the game then shows a
+	// Publish Track button above Export/Import ghost. With a driven lap it
+	// opens the share board's publish drawer and hands over the ghost code
+	// via postMessage — never localStorage (ghost blobs are huge) and never
+	// the URL (URI-too-long). No lap yet → center "please verify" popup.
+	( function initEditorPublishButton() {
+
+		const pubParams = new URLSearchParams( window.location.search );
+		if ( pubParams.get( 'from-editor' ) !== '1' ) return;
+		const pubBtn = document.getElementById( 'publish-track-btn' );
+		if ( ! pubBtn ) return;
+
+		const expBtn = document.getElementById( 'export-ghost-btn' );
+		const impBtn = document.getElementById( 'import-ghost-btn' );
+		const fitPublishWidth = () => {
+
+			if ( ! expBtn || ! impBtn ) return;
+			const left = expBtn.offsetLeft;
+			const width = ( impBtn.offsetLeft + impBtn.offsetWidth ) - left;
+			if ( width > 40 ) {
+
+				pubBtn.style.left = `${ left }px`;
+				pubBtn.style.width = `${ width }px`;
+
+			}
+
+		};
+		fitPublishWidth();
+		setTimeout( fitPublishWidth, 1500 );
+		window.addEventListener( 'resize', fitPublishWidth );
+		pubBtn.hidden = false;
+
+		let pendingGhostCode = '';
+		window.addEventListener( 'message', ( event ) => {
+
+			if ( event.origin !== window.location.origin ) return;
+			const data = event.data;
+			if ( ! data || data.type !== 'skid-editor-ghost-request' ) return;
+			if ( pendingGhostCode ) event.source?.postMessage( { type: 'skid-editor-ghost', ghostCode: pendingGhostCode }, event.origin );
+
+		} );
+
+		function showVerifyTrackPopup() {
+
+			let overlay = document.getElementById( 'verify-track-overlay' );
+			if ( ! overlay ) {
+
+				overlay = document.createElement( 'div' );
+				overlay.id = 'verify-track-overlay';
+				overlay.innerHTML = `<div id="verify-track-card" role="dialog" aria-modal="true" aria-label="Please verify your track">
+					<button id="verify-track-close" type="button" aria-label="Close">✕</button>
+					<h3>Please verify your track</h3>
+					<p>Before you publish, drive a full lap of your track first — that run becomes the ghost other players race against. Close this, finish a clean lap, then hit Publish Track again.</p>
+				</div>`;
+				document.body.appendChild( overlay );
+				overlay.querySelector( '#verify-track-close' ).addEventListener( 'click', () => overlay.remove() );
+				overlay.addEventListener( 'click', ( e ) => { if ( e.target === overlay ) overlay.remove(); } );
+
+			}
+			overlay.style.display = 'flex';
+
+		}
+
+		pubBtn.addEventListener( 'click', () => {
+
+			const code = createGhostExportCode();
+			if ( ! code ) {
+
+				showVerifyTrackPopup();
+				return;
+
+			}
+			pendingGhostCode = code;
+			window.open( 'tracks.html?fromEditorPublish=1', '_blank' );
+
+		} );
+
+	} )();
 	raceModeBtn?.addEventListener( 'click', () => {
 
 		setGameMode( 'race' );
