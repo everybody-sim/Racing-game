@@ -78,7 +78,7 @@
 		<div class="panel admin-strip"><input id="adminTokenInput" placeholder="Admin password" type="password"><div class="row" style="margin-top:0"><button id="export-board-btn" type="button">Export board code</button><button id="import-board-btn" type="button">Import board code</button><button id="copy-link-btn" type="button">Copy share link</button></div></div>
 		<details class="panel" id="publish-drawer"><summary>Publish Track</summary><div class="drawer-panel"><p class="sub" id="publishing-as"></p><section class="publish-ghost-guide" aria-labelledby="publish-ghost-guide-title"><h3 id="publish-ghost-guide-title">Before you publish: add a real run</h3><p>Every shared track needs a ghost so players can race the route you built.</p><ol><li>Open your track and drive a complete lap/run.</li><li>Use <strong>Export ghost</strong> in the game to copy the ghost code.</li><li>Return here, then paste that code into the Ghost code box below.</li><li>Name your track, add optional notes or a thumbnail, and publish it to the board.</li></ol></section><label for="track-name">Track name</label><input id="track-name" placeholder="e.g. Forest Sprint" /><label for="ghost-code">Ghost code or board import/export code</label><textarea id="ghost-code" placeholder="Paste export ghost code here..."></textarea><label for="track-description">Description (optional)</label><textarea id="track-description" placeholder="Add notes, style, and tips..."></textarea><label for="track-thumbnail">Thumbnail image (optional)</label><input id="track-thumbnail" type="file" accept="image/*" /><div class="row"><button id="add-btn" type="button">Publish to board</button></div><div id="status"></div></div></details>
 		<div id="publish-modal" hidden role="dialog" aria-modal="true" aria-label="Publishing track"><div class="publish-modal-card"><h3>Hold on — your track is publishing</h3><p>Sit tight while it uploads to the Track Share Board. Everything else is locked until it finishes.</p><div class="publish-modal-bar"><div class="publish-modal-bar-fill"></div></div><div class="publish-modal-step" id="publish-modal-step">Uploading track…</div></div></div>
-		<section class="browser-section" id="section-featured"><div class="section-head"><div><div class="section-kicker">Editor's algorithmic pick</div><h2>Featured Track</h2></div><p class="sub">Newer than average with above-average play activity.</p></div><div id="featured-track" class="featured-layout"></div></section>
+		<section class="browser-section" id="section-featured"><div class="section-head"><div><div class="section-kicker">Editor's algorithmic pick</div><h2>Featured Track</h2></div><p class="sub">Rotating pick from the most-played tracks and new arrivals pulling plays.</p></div><div id="featured-track" class="featured-layout"></div></section>
 		<section class="browser-section" id="section-trending"><div class="section-head"><div><div class="section-kicker">Hot right now</div><h2>Trending Tracks</h2></div><div class="rail-controls"><button type="button" class="rail-arrow" data-rail-scroll="-1" data-for="section-trending" hidden aria-label="Scroll trending tracks left">←</button><button type="button" class="rail-arrow" data-rail-scroll="1" data-for="section-trending" hidden aria-label="Scroll trending tracks right">→</button><button type="button" class="rail-expand" data-rail-expand="section-trending" hidden>Show more</button></div></div><div id="trending-list" class="track-rail"></div></section>
 		<section class="browser-section" id="section-new-week"><div class="section-head"><div><div class="section-kicker">Fresh uploads</div><h2>New This Week</h2></div><div class="rail-controls"><button type="button" class="rail-arrow" data-rail-scroll="-1" data-for="section-new-week" hidden aria-label="Scroll new tracks left">←</button><button type="button" class="rail-arrow" data-rail-scroll="1" data-for="section-new-week" hidden aria-label="Scroll new tracks right">→</button><button type="button" class="rail-expand" data-rail-expand="section-new-week" hidden>Show more</button></div></div><div id="new-week-list" class="track-rail"></div></section>
 		<div class="panel records-board" id="section-records"><h2 class="records-title">Track Share Record Board <button type="button" class="records-toggle" data-records-toggle="leaders">Show all</button></h2><p class="sub">Drivers ranked by how many unique shared tracks they currently hold #1 on.</p><div id="records-board-list" class="records-list"></div><h2 class="records-title" style="margin-top:16px">Global Placement Rating <button type="button" class="records-toggle" data-records-toggle="ratings">Show all</button></h2><p class="sub">Cross-track rating from placement points (1st/2nd/3rd…) across all shared tracks.</p><div id="placement-rating-list" class="records-list"></div></div>
@@ -1378,19 +1378,46 @@
 			} );
 		}
 
+		let featuredPool = [];
+		let featuredIndex = 0;
+		let featuredTimer = null;
+		function scheduleFeaturedRotation() {
+			if ( featuredTimer ) clearInterval( featuredTimer );
+			if ( featuredPool.length < 2 ) return;
+			featuredTimer = setInterval( () => {
+				if ( document.visibilityState !== 'visible' ) return;
+				featuredIndex = ( featuredIndex + 1 ) % featuredPool.length;
+				renderTrackList( featuredTrack, [ featuredPool[ featuredIndex ] ], 'No tracks have been published yet.', { featured: true } );
+			}, 10000 );
+		}
+
 		function renderHighlights() {
 			const now = Date.now();
 			const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
 			const averagePlays = entries.reduce( ( total, entry ) => total + ( Number( entry.viewCount ) || 0 ), 0 ) / Math.max( 1, entries.length );
 			const newestFirst = [ ...entries ].sort( ( a, b ) => ( Number( b.createdAt ) || 0 ) - ( Number( a.createdAt ) || 0 ) );
-			const featured = newestFirst
-				.filter( ( entry ) => ( Number( entry.viewCount ) || 0 ) >= averagePlays )
-				.sort( ( a, b ) => ( Number( b.viewCount ) || 0 ) - ( Number( a.viewCount ) || 0 ) || ( Number( b.createdAt ) || 0 ) - ( Number( a.createdAt ) || 0 ) )[ 0 ] || newestFirst[ 0 ];
+			// Featured pool: the 10 most-played tracks plus up to 4 recent
+			// arrivals (published within a week) that are earning plays fast.
+			// The slot rotates through the whole mix on a timer instead of
+			// always showing the single most popular track.
+			const byPlays = [ ...entries ].sort( ( a, b ) => ( Number( b.viewCount ) || 0 ) - ( Number( a.viewCount ) || 0 ) || ( Number( b.createdAt ) || 0 ) - ( Number( a.createdAt ) || 0 ) );
+			const topPicks = byPlays.slice( 0, 10 );
+			const playsPerDay = ( entry ) => ( Number( entry.viewCount ) || 0 ) / Math.max( 0.5, ( now - ( Number( entry.createdAt ) || 0 ) ) / ( 24 * 60 * 60 * 1000 ) );
+			const newPicks = newestFirst
+				.filter( ( entry ) => Number( entry?.createdAt ) >= weekAgo )
+				.filter( ( entry ) => ! topPicks.includes( entry ) )
+				.filter( ( entry ) => ( Number( entry.viewCount ) || 0 ) >= 3 && playsPerDay( entry ) >= 1 )
+				.sort( ( a, b ) => playsPerDay( b ) - playsPerDay( a ) )
+				.slice( 0, 4 );
+			featuredPool = [ ...topPicks, ...newPicks ];
+			featuredIndex = featuredPool.length ? Math.floor( Math.random() * featuredPool.length ) : 0;
+			const featured = featuredPool[ featuredIndex ] || newestFirst[ 0 ];
 			const trending = [ ...entries ]
 				.sort( ( a, b ) => ( ( Number( b.viewCount ) || 0 ) * 2 + ( Number( b.thumbsUp ) || 0 ) + ( Number( b.createdAt ) >= weekAgo ? 5 : 0 ) ) - ( ( Number( a.viewCount ) || 0 ) * 2 + ( Number( a.thumbsUp ) || 0 ) + ( Number( a.createdAt ) >= weekAgo ? 5 : 0 ) ) )
 				.slice( 0, RAIL_MAX );
 			const newWeek = newestFirst.filter( ( entry ) => Number( entry?.createdAt ) >= weekAgo ).slice( 0, RAIL_MAX );
 			renderTrackList( featuredTrack, featured ? [ featured ] : [], 'No tracks have been published yet.', { featured: true } );
+			scheduleFeaturedRotation();
 			renderRail( trendingList, trending, 'section-trending', 'Play counts will surface trending tracks once people start racing.' );
 			renderRail( newWeekList, newWeek, 'section-new-week', 'No new tracks were published in the past 7 days.' );
 		}
