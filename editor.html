@@ -684,7 +684,7 @@
 		<span class="toolbar-group-label">Start / Finish</span>
 		<select id="gate-select" aria-label="Gate picker">
 			<option value="">Gate…</option>
-			<option value="track-start-finish">Start/Finish</option>
+			<option value="track-start-finish">Loop Finish</option>
 			<option value="track-start">Place: Start</option>
 			<option value="track-finish">Place: Finish</option>
 		</select>
@@ -900,7 +900,7 @@
 	import { ORIENT_DEG, CELL_RAW, GRID_SCALE, encodeCells, decodeCells, encodeCellsV3, decodeCellsAny, encodeV3Json, decodeV3Json, computeSpawnPosition, computeTrackBounds, computePoolPresetWaterCells, smoothChokeSourceModel, THIN_GROUND_MODEL_KEYS, THIN_MODEL_KEYS, smoothThinSourceModel } from './js/Track.js?v=1000304';
 	// Drive-in-editor: real physics + real vehicle, same stack the game runs.
 	import { createWorldSettings, createWorld, addBroadphaseLayer, addObjectLayer, enableCollision, registerAll, updateWorld, rigidBody, box, sphere, MotionType, castRay, createAnyCastRayCollector, createDefaultCastRaySettings, CastRayStatus, filter as ccLayerFilter } from 'crashcat';
-	import { buildWallColliders, createSphereBody } from './js/Physics.js?v=20260958';
+	import { buildWallColliders, createSphereBody } from './js/Physics.js?v=20260959';
 	import { Vehicle } from './js/Vehicle.js?v=1000228';
 import { createShadowProxyController } from './js/ShadowProxy.js?v=3';
 
@@ -3550,6 +3550,35 @@ function computeCausticShade( normal ) {
 
 	}
 
+	// Clear Map also means a fresh SETTINGS start (user order 2026-10-15):
+	// custom pads/surfaces/pool configs, pool colors, world template,
+	// weather and the picked test spawn all reset to their defaults, the
+	// same values a brand-new track would serialize with.
+	function resetTrackSettings() {
+
+		customSurfaceConfigs = JSON.parse( JSON.stringify( CUSTOM_SURFACE_DEFAULTS ) );
+		customPadConfigs = JSON.parse( JSON.stringify( CUSTOM_PAD_DEFAULTS ) );
+		customPoolConfig = normalizeCustomPoolConfig( null );
+		customPoolColorsEnabled = false;
+		worldPreset = 'normal';
+		const templateSelect = document.getElementById( 'map-template-select' );
+		if ( templateSelect ) templateSelect.value = 'normal';
+		weatherSettings = normalizeWeatherSettings( null );
+		applyWeatherPreset( weatherSettings.preset );
+		const weatherSelect = document.getElementById( 'weather-preset' );
+		if ( weatherSelect ) weatherSelect.value = weatherSettings.preset;
+		const precipSelect = document.getElementById( 'weather-precip' );
+		if ( precipSelect ) precipSelect.value = weatherSettings.precipitation;
+		const intensitySelect = document.getElementById( 'weather-intensity' );
+		if ( intensitySelect ) intensitySelect.value = weatherSettings.intensity;
+		const windSelect = document.getElementById( 'weather-wind' );
+		if ( windSelect ) windSelect.value = weatherSettings.wind;
+		const lightningToggle = document.getElementById( 'weather-lightning' );
+		if ( lightningToggle ) lightningToggle.checked = weatherSettings.lightning;
+		testSpawnCell = null;
+
+	}
+
 	function clearAll() {
 
 		pushHistorySnapshot();
@@ -5452,7 +5481,7 @@ function refreshMovingSpeedUi() {
 	gateSelect?.addEventListener( 'change', () => {
 
 		selectTileType( gateSelect.value || 'track-start-finish' );
-		showToast( `Gate tool: ${ gateSelect.options[ gateSelect.selectedIndex ]?.textContent || 'Start/Finish' }` );
+		showToast( `Gate tool: ${ gateSelect.options[ gateSelect.selectedIndex ]?.textContent || 'Loop Finish' }` );
 
 	} );
 	surfaceSelect?.addEventListener( 'change', () => {
@@ -5980,7 +6009,8 @@ function refreshMovingSpeedUi() {
 	document.getElementById( 'btn-clear' ).addEventListener( 'click', () => {
 
 		clearAll();
-		showToast( 'Track cleared' );
+		resetTrackSettings();
+		showToast( 'Track cleared — fresh start' );
 
 	} );
 
@@ -8079,7 +8109,7 @@ function updateMovingObstacles( state, now, vehicleList ) {
 
 			if ( ! active ) { showToast( 'Test car unavailable' ); return; }
 			// Always recompute from the CURRENT grid: a placed Start or
-			// Start/Finish block wins — position AND facing — falling back to
+			// Loop Finish (start/finish) block wins — position AND facing — falling back to
 			// the first road cell when the map has no start block yet.
 			const spawn = computeSpawnPosition( getCellsArray() );
 			vehicle.setSpawn( spawn.position, spawn.angle );

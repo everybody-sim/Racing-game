@@ -1335,7 +1335,9 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			motionType: MotionType.STATIC,
 			objectLayer: world._OL_STATIC,
 			position,
-			friction: 1.0,
+			// (user order 2026-10-15) frictionless: obstacles the car hits,
+			// not drives on, should let it slide off instead of grabbing.
+			friction: 0.0,
 			restitution: 0.02,
 		} );
 		if ( debugGroup ) addDebugSphere( debugGroup, poleRadius, position );
@@ -1357,7 +1359,7 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			motionType: MotionType.STATIC,
 			objectLayer: world._OL_STATIC,
 			position,
-			friction: 0.9,
+			friction: 0.0,
 			restitution: 0.02,
 		} );
 		if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position );
@@ -1379,7 +1381,7 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			motionType: MotionType.STATIC,
 			objectLayer: world._OL_STATIC,
 			position,
-			friction: 0.8,
+			friction: 0.0,
 			restitution: 0.02,
 		} );
 		if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position );
@@ -1404,7 +1406,7 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			objectLayer: world._OL_STATIC,
 			position,
 			quaternion,
-			friction: 0.9,
+			friction: 0.0,
 			restitution: 0.01,
 		} );
 		if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, quaternion );
