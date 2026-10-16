@@ -12,6 +12,7 @@ import { SmokeTrails, WaterSplashFX } from './Particles.js?v=20260923';
 import { SkidMarks } from './SkidMarks.js';
 import { GameAudio } from './Audio.js';
 import { encodeGhostBinary, decodeGhostBinary, encodeGhostCode, decodeGhostCode } from './GhostCodec.js';
+import { makeTunnelClipProbe } from './TunnelCamProbe.js?v=1';
 import { DeterministicPlaybackController } from './tas-core.js';
 import { AdvancementEvents, AdvancementManager, ADVANCEMENTS } from './Advancements.js';
 import { HudExtras } from './HudExtras.js?v=4';
@@ -6563,6 +6564,16 @@ async function init() {
 	};
 	cam.floorProbe = camClipFloorProbe;
 	if ( cam2 ) cam2.floorProbe = camClipFloorProbe;
+
+	// Tunnel camera containment (see js/TunnelCamProbe.js). Analytic over the
+	// tunnel cell grid — while the car is inside a tunnel it keeps the chase
+	// camera out of the trench dirt and under closed roofs; anywhere else it
+	// reports full length so the camera is untouched.
+	const tunnelClipProbe = makeTunnelClipProbe( Array.isArray( extras?.tunnels ) ? extras.tunnels : null, CELL_RAW * GRID_SCALE );
+	if ( tunnelClipProbe ) {
+		cam.clipProbe = tunnelClipProbe;
+		if ( cam2 ) cam2.clipProbe = tunnelClipProbe;
+	}
 
 	// Reused each frame for cam.update() dynamics to avoid allocating an options
 	// object on every camera update (up to 4 calls/frame). cam.update only reads the
