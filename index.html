@@ -3355,11 +3355,20 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 					}
 					return;
 				}
-				const avgPlays = entries.reduce( ( t, e ) => t + ( Number( e.viewCount ) || 0 ), 0 ) / entries.length;
-				const featured = [ ...entries ]
-					.filter( e => ( Number( e.viewCount ) || 0 ) >= avgPlays )
-					.sort( ( a, b ) => ( Number( b.viewCount ) || 0 ) - ( Number( a.viewCount ) || 0 ) || ( Number( b.createdAt ) || 0 ) - ( Number( a.createdAt ) || 0 ) )[ 0 ]
-					|| entries.sort( ( a, b ) => ( Number( b.viewCount ) || 0 ) - ( Number( a.viewCount ) || 0 ) )[ 0 ];
+				// The home featured pick MIRRORS the share board's daily
+				// featured track exactly (user order 2026-10-15): the pool
+				// is the trending rail (plays * 2 + likes, +5 freshness
+				// boost for tracks published within the last week, top 20)
+				// and the pick steps through that list one calendar day at
+				// a time — so the home page always shows the same track the
+				// board features today.
+				const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+				const trendingScore = ( e ) => ( Number( e.viewCount ) || 0 ) * 2 + ( Number( e.thumbsUp ) || 0 ) + ( Number( e.createdAt ) >= weekAgo ? 5 : 0 );
+				const trending = [ ...entries ]
+					.sort( ( a, b ) => trendingScore( b ) - trendingScore( a ) )
+					.slice( 0, 20 );
+				const dayNumber = Math.floor( Date.now() / ( 24 * 60 * 60 * 1000 ) );
+				const featured = trending[ dayNumber % trending.length ];
 				ftEl.href = localizePlayUrl( featured.playUrl );
 				ftEl.target = '_blank';
 				ftEl.rel = 'noopener noreferrer';
