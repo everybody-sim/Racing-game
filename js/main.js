@@ -11687,7 +11687,18 @@ function completeCampaignStage() {
 			return;
 
 		}
-		const url = stripEditorOnlyParams( typeof parsed.url === 'string' ? parsed.url : '' );
+		let url = stripEditorOnlyParams( typeof parsed.url === 'string' ? parsed.url : '' );
+		// The account was renamed (everybodysim → everybody-sim, 2026-10-20):
+		// ghost codes exported before the rename embed the dead old domain,
+		// so rebase imported ghost URLs onto the current host.
+		if ( url ) {
+			try {
+				const ghostUrl = new URL( url, window.location.href );
+				ghostUrl.protocol = window.location.protocol;
+				ghostUrl.host = window.location.host;
+				url = ghostUrl.toString();
+			} catch ( e ) {}
+		}
 		const applied = applyImportedGhostPayload( parsed.ghost );
 		if ( applied ) {
 
