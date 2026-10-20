@@ -1803,25 +1803,6 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 			text-transform: uppercase;
 			color: #77f3b1;
 		}
-		#home-players-online {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			margin-bottom: 14px;
-			font: 600 12px/1 "Inter", "Segoe UI", sans-serif;
-			color: #9ab5d4;
-		}
-		#home-players-online[hidden] { display: none; }
-		#home-players-online .online-dot {
-			width: 8px;
-			height: 8px;
-			border-radius: 50%;
-			background: #77f3b1;
-			box-shadow: 0 0 9px rgba(119, 243, 177, 0.75);
-			flex: 0 0 auto;
-			animation: online-pulse 2.4s ease-in-out infinite;
-		}
-		@keyframes online-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 		#home-featured-track {
 			display: flex;
 			flex-direction: column;
@@ -2611,7 +2592,6 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 
 				<!-- Right: Community panel -->
 				<div id="home-community">
-					<div id="home-players-online" hidden><span class="online-dot" aria-hidden="true"></span><span id="home-players-online-text">Checking who's online…</span></div>
 					<div>
 						<div class="home-panel-title">Featured community track</div>
 						<a id="home-featured-track" href="tracks.html">
@@ -3497,119 +3477,7 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 			} );
 		}
 	</script>
-	<script>
-		// ── Players online (user order 2026-10-20) ─────────────────────────
-		// Live presence on the Sheets backend (his Apps Script /exec JSONP
-		// API). Logged-in players heartbeat a small record every 30s; the
-		// count reads the record list and keeps everyone whose record was
-		// updated within the last 90s (3 missed beats). Server-side
-		// "updated" timestamps decide freshness, so client clocks don't
-		// matter. The count display refreshes every 30s.
-		( () => {
 
-			const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwHFwSs-o-BbwHHo5cy6vQhvfT2dD279GLngQ8OohimDtMQKIJRa4nihJtfwoKGgB3y/exec';
-			const PRESENCE_PREFIX = 'online:';
-			const FRESH_MS = 90 * 1000;
-			const TICK_MS = 30 * 1000;
-			const el = document.getElementById( 'home-players-online' );
-			const textEl = document.getElementById( 'home-players-online-text' );
-			if ( ! el || ! textEl ) return;
-
-			let jsonpSeq = 0;
-			let inFlight = false;
-
-			function sheetsJsonp( params ) {
-
-				return new Promise( ( resolve, reject ) => {
-
-					const cb = '__skidOnline_' + ( ++ jsonpSeq );
-					const script = document.createElement( 'script' );
-					let timer;
-					const finish = ( fn, value ) => {
-
-						window.clearTimeout( timer );
-						script.remove();
-						delete window[ cb ];
-						fn( value );
-
-					};
-					window[ cb ] = data => finish( resolve, data );
-					script.onerror = () => finish( reject, new Error( 'sheets request failed' ) );
-					timer = window.setTimeout( () => finish( reject, new Error( 'sheets timeout' ) ), 20000 );
-					script.src = SHEETS_ENDPOINT + '?' + new URLSearchParams( { ...params, callback: cb } ).toString();
-					document.head.appendChild( script );
-
-				} );
-
-			}
-
-			function displayNameFor( session ) {
-
-				const name = String( session?.username || '' ).trim();
-				if ( ! name ) return '';
-				return name.slice( 0, 24 );
-
-			}
-
-			async function presenceTick() {
-
-				if ( inFlight ) return;
-				inFlight = true;
-				try {
-
-					// Heartbeat first: a logged-in player keeps their own
-					// presence record fresh (same key overwrites, so the
-					// sheet only grows with unique players).
-					const session = window.__accountApi?.session?.();
-					const name = displayNameFor( session );
-					if ( name && session?.token ) {
-
-						await sheetsJsonp( { action: 'save', key: PRESENCE_PREFIX + encodeURIComponent( name ), value: JSON.stringify( { n: name } ) } );
-
-					}
-
-					// Then count everyone who heartbeated recently. The list
-					// response carries a server-side updated timestamp per
-					// record, so freshness is trusted everywhere.
-					const list = await sheetsJsonp( { action: 'list' } );
-					if ( ! list?.ok || ! Array.isArray( list.records ) ) return;
-					const now = Date.now();
-					const fresh = list.records.filter( ( rec ) => {
-
-						if ( ! String( rec?.key || '' ).startsWith( PRESENCE_PREFIX ) ) return false;
-						const updated = Date.parse( rec.updated || '' );
-						return Number.isFinite( updated ) && now - updated < FRESH_MS;
-
-					} );
-					const names = fresh
-						.map( ( rec ) => {
-
-							try { return JSON.parse( rec.value || '{}' ).n || ''; } catch ( e ) { return ''; }
-
-						} )
-						.filter( Boolean );
-					el.hidden = false;
-					el.title = names.length ? names.slice( 0, 25 ).join( ', ' ) : '';
-					textEl.textContent = fresh.length === 1 ? '1 player online' : fresh.length + ' players online';
-
-				} catch ( e ) {
-
-					// Backend unreachable: keep the last count; the dot only
-					// shows real data.
-
-				} finally {
-
-					inFlight = false;
-
-				}
-
-			}
-
-			presenceTick();
-			window.setInterval( presenceTick, TICK_MS );
-
-		} )();
-	</script>
 	<script>
 		const competitionsEntryLinks = [
 			document.querySelector( 'a[href="competitions.html"][data-out-of-order="1"]' ),
