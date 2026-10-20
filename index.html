@@ -4,7 +4,7 @@
 <script>
 // SERVICE WORKER KILLER (2026-09-28): a leftover SW from an old deploy was
 // serving months-stale JS to some browsers no matter how often the ?v=
-// strings changed — every "still broken" report traced to this. Runs BEFORE
+// strings changed — every "still broken" report traced to this. Runs BEFORE 
 // anything loads: unregister ALL workers, wipe ALL caches, reload once.
 ( async () => {
 	try {
