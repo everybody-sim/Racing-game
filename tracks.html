@@ -396,6 +396,10 @@
 				const src = new URL( playUrl, window.location.href );
 				const u = new URL( 'index.html', window.location.href );
 				src.searchParams.forEach( ( v, k ) => u.searchParams.set( k, v ) );
+				// The editor's session-only flag must never reach players:
+				// strips it from ALREADY-published entries at render time
+				// (user order 2026-10-20).
+				u.searchParams.delete( 'from-editor' );
 				u.hash = src.hash;
 				return u.toString();
 			} catch ( e ) {
@@ -1626,6 +1630,13 @@
 			if ( ! parsed?.url || ! parsed?.ghost?.samples || parsed.ghost.samples.length < 2 ) {
 				return setStatus( 'Ghost code is missing required race data.', true );
 			}
+			// Never persist the editor's session-only from-editor flag in the
+			// stored play URL or the posted ghost code (user order 2026-10-20).
+			try {
+				const u = new URL( parsed.url, window.location.href );
+				u.searchParams.delete( 'from-editor' );
+				parsed.url = u.toString();
+			} catch ( e ) {}
 
 			const name = ( nameInput.value || '' ).trim() || inferTrackName( parsed.url );
 			const description = ( descriptionInput.value || '' ).trim();

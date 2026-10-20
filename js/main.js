@@ -10152,7 +10152,27 @@ function completeCampaignStage() {
 		: [];
 	const lapStoreKey = `racing-lap-stats:${ mapParam || 'default' }`;
 	const stuntStoreKey = `racing-stunt-stats:${ mapParam || 'default' }`;
-	const currentTrackUrl = `${ window.location.origin }${ window.location.pathname }${ window.location.search }`;
+	// from-editor=1 is a SESSION-ONLY flag for the editor's Publish Track
+	// button (user order 2026-10-20). It must never leak into ghost codes,
+	// board play URLs or ghost-import tabs — otherwise everyone who plays a
+	// track published from an editor session would also see the Publish
+	// Track button.
+	function stripEditorOnlyParams( url ) {
+
+		try {
+
+			const u = new URL( url, window.location.href );
+			u.searchParams.delete( 'from-editor' );
+			return u.toString();
+
+		} catch ( e ) {
+
+			return url;
+
+		}
+
+	}
+	const currentTrackUrl = stripEditorOnlyParams( `${ window.location.origin }${ window.location.pathname }${ window.location.search }` );
 	const leaderboardTrackId = getTrackId( mapParam, extrasParam );
 	const recentGhostStoreKey = `racing-recent-ghosts:${ leaderboardTrackId }`;
 	const leaderboardLegacyTrackIds = getLegacyTrackIds( mapParam, extrasParam );
@@ -11667,7 +11687,7 @@ function completeCampaignStage() {
 			return;
 
 		}
-		const url = typeof parsed.url === 'string' ? parsed.url : '';
+		const url = stripEditorOnlyParams( typeof parsed.url === 'string' ? parsed.url : '' );
 		const applied = applyImportedGhostPayload( parsed.ghost );
 		if ( applied ) {
 
