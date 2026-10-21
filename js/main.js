@@ -4846,7 +4846,6 @@ async function init() {
 	const isSplitScreen = new URLSearchParams( window.location.search ).get( 'multiplayer' ) === '1';
 	const editorQuickTestEnabled = searchParams.get( 'editorQuickTest' ) === '1';
 	const replayViewerMode = searchParams.get( 'replayViewer' ) === '1';
-	const editorReturnParam = String( searchParams.get( 'editorReturn' ) || '' );
 	const editorGhostMapHash = String( searchParams.get( 'editorGhostMap' ) || '' );
 	const QUICK_TEST_GHOST_KEY = 'racing-editor-quicktest-ghost-v1';
 	const QUICK_TEST_GHOST_MAP_KEY = 'racing-editor-quicktest-map-v1';
@@ -15325,7 +15324,7 @@ function completeCampaignStage() {
 				// Slower laps that don't beat the PB are NOT submitted (the worker keeps
 				// the min anyway, but there's no point POSTing them).
 				if ( isNewBest && ! isSplitScreen ) submitLeaderboardTime( completedLap );
-				if ( ! lapInvalid && editorQuickTestEnabled && editorReturnParam && ! isSplitScreen && currentLapGhostSamples.length > 1 ) {
+				if ( ! lapInvalid && editorQuickTestEnabled && ! isSplitScreen && currentLapGhostSamples.length > 1 ) {
 
 					try {
 
@@ -15347,8 +15346,14 @@ function completeCampaignStage() {
 						console.warn( 'Failed to persist quick-test ghost', error );
 
 					}
-					window.location.href = editorReturnParam;
-					return;
+					// NO auto-navigation (user orders 2026-10-20/21). The old
+					// window.location.href = editorReturnParam yanked players
+					// out of the game at lap completion (2fps stall mid-load,
+					// and a stale dash-domain editor URL after the account
+					// rename). The ghost handoff works purely through
+					// localStorage — the editor reads it when the player
+					// RETURNS to it themselves.
+					showTopMessage( 'Quick test lap saved — return to the editor to publish it', false, 3200 );
 
 				}
 						lapNumber ++;
