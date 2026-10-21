@@ -10152,17 +10152,21 @@ function completeCampaignStage() {
 		: [];
 	const lapStoreKey = `racing-lap-stats:${ mapParam || 'default' }`;
 	const stuntStoreKey = `racing-stunt-stats:${ mapParam || 'default' }`;
-	// from-editor=1 is a SESSION-ONLY flag for the editor's Publish Track
-	// button (user order 2026-10-20). It must never leak into ghost codes,
-	// board play URLs or ghost-import tabs — otherwise everyone who plays a
-	// track published from an editor session would also see the Publish
-	// Track button.
+	// These are SESSION-ONLY editor params and must never leak into ghost
+	// codes, board play URLs or ghost-import tabs (user orders 2026-10-20/21):
+	//   from-editor     — shows the editor's Publish Track button
+	//   editorQuickTest / editorReturn / editorGhostMap — the Quick Test flow;
+	//   leaked copies made ANY player who finished a lap auto-redirect back
+	//   to the editor at 2fps with the ghost map blob riding in the URL.
 	function stripEditorOnlyParams( url ) {
 
 		try {
 
 			const u = new URL( url, window.location.href );
 			u.searchParams.delete( 'from-editor' );
+			u.searchParams.delete( 'editorQuickTest' );
+			u.searchParams.delete( 'editorReturn' );
+			u.searchParams.delete( 'editorGhostMap' );
 			return u.toString();
 
 		} catch ( e ) {

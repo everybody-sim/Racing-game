@@ -396,10 +396,15 @@
 				const src = new URL( playUrl, window.location.href );
 				const u = new URL( 'index.html', window.location.href );
 				src.searchParams.forEach( ( v, k ) => u.searchParams.set( k, v ) );
-				// The editor's session-only flag must never reach players:
-				// strips it from ALREADY-published entries at render time
-				// (user order 2026-10-20).
+				// Session-only editor params must never reach players:
+				// strips them from ALREADY-published entries at render
+				// time (user orders 2026-10-20/21). editorQuickTest /
+				// editorReturn leaked onto the board made every player's
+				// finished lap auto-redirect back to the editor.
 				u.searchParams.delete( 'from-editor' );
+				u.searchParams.delete( 'editorQuickTest' );
+				u.searchParams.delete( 'editorReturn' );
+				u.searchParams.delete( 'editorGhostMap' );
 				u.hash = src.hash;
 				return u.toString();
 			} catch ( e ) {
@@ -1630,11 +1635,14 @@
 			if ( ! parsed?.url || ! parsed?.ghost?.samples || parsed.ghost.samples.length < 2 ) {
 				return setStatus( 'Ghost code is missing required race data.', true );
 			}
-			// Never persist the editor's session-only from-editor flag in the
-			// stored play URL or the posted ghost code (user order 2026-10-20).
+			// Never persist session-only editor params in the stored play URL
+			// or the posted ghost code (user orders 2026-10-20/21).
 			try {
 				const u = new URL( parsed.url, window.location.href );
 				u.searchParams.delete( 'from-editor' );
+				u.searchParams.delete( 'editorQuickTest' );
+				u.searchParams.delete( 'editorReturn' );
+				u.searchParams.delete( 'editorGhostMap' );
 				parsed.url = u.toString();
 			} catch ( e ) {}
 
