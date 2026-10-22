@@ -307,7 +307,9 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			motionType: MotionType.STATIC,
 			objectLayer: world._OL_STATIC,
 			position,
-			friction: 0.95,
+			// (user order 2026-10-22) frictionless support — never drivable,
+			// and grip here let cars climb the pillar.
+			friction: 0.0,
 			restitution: 0.0,
 		} );
 		if ( debugGroup ) addDebugBox( debugGroup, SUPPORT_HALF_EXTENTS, position );
@@ -627,7 +629,8 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 				objectLayer: world._OL_STATIC,
 				position,
 				quaternion: yawQuat,
-				friction: 0.95,
+				// (user order 2026-10-22) frictionless support arm.
+				friction: 0.0,
 				restitution: 0.0,
 			} );
 			if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, yawQuat );
@@ -689,7 +692,8 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 				objectLayer: world._OL_STATIC,
 				position,
 				quaternion: yawQuat,
-				friction: 0.95,
+				// (user order 2026-10-22) frictionless support arm.
+				friction: 0.0,
 				restitution: 0.0,
 			} );
 			if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, yawQuat );
@@ -1224,7 +1228,9 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			// Top flush with the ground surface; bottom buried below the pit
 			// floor top — no lip, no gap, no seam between wall and floor.
 			const position = [ cx + ox, groundY + 0.01 - wallHalfH, cz + oz ];
-			rigidBody.create( world, { shape: box.create( { halfExtents } ), motionType: MotionType.STATIC, objectLayer: world._OL_STATIC, position, quaternion, friction: 0.9, restitution: 0.0 } );
+			// (user order 2026-10-22) tunnel side walls frictionless — the
+			// tunnel FLOOR keeps its grip; the walls must not be climbable.
+			rigidBody.create( world, { shape: box.create( { halfExtents } ), motionType: MotionType.STATIC, objectLayer: world._OL_STATIC, position, quaternion, friction: 0.0, restitution: 0.0 } );
 			if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, quaternion );
 
 		}
@@ -1295,7 +1301,9 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 			// preventing a lip that catches the sphere. The thick ground collider
 			// (0.5 half-height, top at groundY+0.01) now overlaps this wall top.
 			const position = [ cx + ox, groundY - CELL_RAW * S * 0.19, cz + oz ];
-			rigidBody.create( world, { shape: box.create( { halfExtents } ), motionType: MotionType.STATIC, objectLayer: world._OL_STATIC, position, quaternion, friction: 0.9, restitution: 0.0 } );
+			// (user order 2026-10-22) pool side walls frictionless — the pool
+			// FLOOR keeps its grip; grip on the walls let cars climb out.
+			rigidBody.create( world, { shape: box.create( { halfExtents } ), motionType: MotionType.STATIC, objectLayer: world._OL_STATIC, position, quaternion, friction: 0.0, restitution: 0.0 } );
 			if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, quaternion );
 
 
@@ -1671,16 +1679,37 @@ export function buildWallColliders( world, debugGroup, customCells, extras = nul
 		// grid scale, so the hitbox seals the whole building.
 		const position = [ cx, halfExtents[ 1 ], cz ];
 		const quaternion = [ rotQuat.x, rotQuat.y, rotQuat.z, rotQuat.w ];
+		// (user order 2026-10-22) Building walls are FRICTIONLESS so pressing
+		// against them can never climb the building. A thin high-grip cap
+		// sits just above the roof: too thin to climb from the side, but
+		// once the car is ON the roof it is the drivable surface (same
+		// pattern as frictionless road rails under the grippy road top).
 		rigidBody.create( world, {
 			shape: box.create( { halfExtents } ),
 			motionType: MotionType.STATIC,
 			objectLayer: world._OL_STATIC,
 			position,
 			quaternion,
-			friction: 0.9,
+			friction: 0.0,
 			restitution: 0.0,
 		} );
 		if ( debugGroup ) addDebugBox( debugGroup, halfExtents, position, quaternion );
+		const capHalfH = 0.03 * S;
+		const capHalfExtents = [ 4.5 * S, capHalfH, 4.5 * S ];
+		// Bottom flush with the building top; top only 2*capHalfH (~0.05
+		// world units) higher — unnoticeable, but the resting sphere only
+		// ever touches the cap, so the roof drives with full grip.
+		const capPosition = [ cx, 2 * halfExtents[ 1 ] + capHalfH, cz ];
+		rigidBody.create( world, {
+			shape: box.create( { halfExtents: capHalfExtents } ),
+			motionType: MotionType.STATIC,
+			objectLayer: world._OL_STATIC,
+			position: capPosition,
+			quaternion,
+			friction: 5.0,
+			restitution: 0.0,
+		} );
+		if ( debugGroup ) addDebugBox( debugGroup, capHalfExtents, capPosition, quaternion );
 
 	}
 
